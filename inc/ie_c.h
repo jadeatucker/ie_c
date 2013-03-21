@@ -52,6 +52,7 @@ struct Key {
 void *keread(FILE *file, size_t size, size_t offset);
 void kdestroy(struct Key *key);
 void klist(struct Key *key);
-char *kbiffstr(struct Key *key, struct KBifEnt kbe);
+char *kbifstr(struct Key *key, struct KBifEnt kbe);
+struct KResEnt *kfindres(const char *resname, struct Key *key);
 struct Key *kread(FILE *file);
 #endif

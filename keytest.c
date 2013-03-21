@@ -18,12 +18,17 @@ int main(int c, char **v) {
   char *str;
   for(i = 0; i < key->countbif; i++) {
     struct KBifEnt kbe = key->bifents[i];
-    str = kbiffstr(key, kbe);
+    str = kbifstr(key, kbe);
     if(str != NULL) {
       printf("%s\n", str);
       free(str);
     }
   }
+
+  struct KResEnt *kre = kfindres("AMUL05", key);
+  if(kre != NULL)
+    printf("%s found at %d\n", kre->resname, kre->reslocator);
+
   kdestroy(key);
 
   return 0;

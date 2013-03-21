@@ -32,8 +32,10 @@ void *keread(FILE *file, size_t size, size_t offset)
   assert(result != NULL);
 
   /* read data */
-  if(fread(result, size, 1, file) != 1)
+  if(fread(result, size, 1, file) != 1) {
    free(result);
+   result = NULL;
+  }
 
   /* reset file pointer pos */
   fseek(file, tmp, SEEK_SET);
@@ -47,6 +49,7 @@ struct Key *kread(FILE *file)
   struct Key *key = malloc(sizeof(struct Key));
 
   /* read header */
+  fseek(file, 0, SEEK_SET);
   if(fread(key, IE_KEY_H_LEN, 1, file) != 1) 
     return NULL;
 
@@ -96,7 +99,7 @@ void klist(struct Key *key)
   } 
 }
 
-char *kbiffstr(struct Key *key, struct KBifEnt kbe)
+char *kbifstr(struct Key *key, struct KBifEnt kbe)
 {
   assert(key != NULL);
   if(kbe.lenfname > 0) {
@@ -110,4 +113,19 @@ char *kbiffstr(struct Key *key, struct KBifEnt kbe)
   else {
     return NULL;
   }
+}
+
+struct KResEnt *kfindres(const char *resname, struct Key *key)
+{
+  assert(key != NULL);
+  int i = key->countres;
+  struct KResEnt *kre;
+
+  for(; i > 0; i--) {
+    kre = &key->resents[i];
+
+    if(strcmp(resname, kre->resname) == 0)
+      return kre;
+  }
+  return NULL;
 }
