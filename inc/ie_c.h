@@ -19,6 +19,8 @@
 #define IE_BIFE_LEN 12
 #define IE_RESE_LEN 14
 
+#define KSTRDOFF(N) (IE_KEY_H_LEN + IE_BIFE_LEN * N->countbif)
+
 #pragma pack(push, 1)
 struct KBifEnt {
   uint32_t length;
@@ -42,6 +44,7 @@ struct Key {
   uint32_t offsetres;
 
   struct KBifEnt *bifents;
+  char *strdata;
   struct KResEnt *resents;
 };
 #pragma pack(pop)
@@ -49,5 +52,6 @@ struct Key {
 void *keread(FILE *file, size_t size, size_t offset);
 void kdestroy(struct Key *key);
 void klist(struct Key *key);
+char *kbiffstr(struct Key *key, struct KBifEnt kbe);
 struct Key *kread(FILE *file);
 #endif

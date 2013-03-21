@@ -54,6 +54,13 @@ struct Key *kread(FILE *file)
   if(key->countbif > 0)
     key->bifents = keread(file, key->countbif * IE_BIFE_LEN, key->offsetbif);
 
+  /* load BIF str data */
+  if(key->offsetbif > 0 && key->offsetres > 0) {
+    size_t strdoffset = KSTRDOFF(key);
+    size_t size = key->offsetres - strdoffset;
+    key->strdata = keread(file, size, strdoffset);
+  }
+
   /* Load Resource entries */
   if(key->countres > 0) {
     key->resents = keread(file, key->countres * IE_RESE_LEN, key->offsetres);
@@ -86,4 +93,20 @@ void klist(struct Key *key)
     resname[7] = '\0';
     printf("%s\n", resname);
   } 
+}
+
+char *kbiffstr(struct Key *key, struct KBifEnt kbe)
+{
+  assert(key != NULL);
+  if(kbe.lenfname > 0) {
+    size_t size = kbe.lenfname;
+    size_t stroffset = kbe.offsetfname - KSTRDOFF(key);
+    char *str = malloc(size);
+    assert(str != NULL);
+    memcpy(str, &key->strdata[stroffset], size);
+    return str;
+  }
+  else {
+    return NULL;
+  }
 }
