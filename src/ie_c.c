@@ -48,7 +48,7 @@ struct Key *kread(FILE *file)
 
   /* read header */
   if(fread(key, IE_KEY_H_LEN, 1, file) != 1) 
-    return 0;
+    return NULL;
 
   /* load BIF entries */
   if(key->countbif > 0)
@@ -62,10 +62,8 @@ struct Key *kread(FILE *file)
   }
 
   /* Load Resource entries */
-  if(key->countres > 0) {
+  if(key->countres > 0)
     key->resents = keread(file, key->countres * IE_RESE_LEN, key->offsetres);
-
-  }
 
   return key;
 }  
@@ -77,6 +75,8 @@ void kdestroy(struct Key *key)
       free(key->bifents);
     if(key->resents != NULL)
       free(key->resents);
+    if(key->strdata != NULL)
+      free(key->strdata);
     free(key);
   }
 }
@@ -92,6 +92,7 @@ void klist(struct Key *key)
     resname = strdup(kre.resname);
     resname[7] = '\0';
     printf("%s\n", resname);
+    free(resname);
   } 
 }
 

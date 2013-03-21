@@ -11,6 +11,7 @@ int main(int c, char **v) {
 
   struct Key *key = kread(fIn);
   assert(key != NULL);
+  fclose(fIn);
 
   /*klist(key);*/
   int i;
