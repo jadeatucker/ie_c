@@ -1,5 +1,6 @@
 # Object files
 *.o
+*.dSYM
 
 # Libraries
 *.lib
@@ -20,3 +21,9 @@
 build/
 data/
 bin/
+
+# Logs
+*.log
+
+# Compiled tests
+tests/*_test
