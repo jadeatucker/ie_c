@@ -5,7 +5,7 @@ PREFIX?=/usr/local
 SOURCES=$(wildcard src/**/*.c src/*.c)
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 
-TEST_SRC=$(wildcard tests/*.c)
+TEST_SRC=$(wildcard tests/*_test.c)
 TESTS=$(patsubst %.c,%,$(TEST_SRC))
 
 TARGET=build/libiec.a
@@ -33,6 +33,7 @@ build:
 .PHONY: tests
 tests: CFLAGS += $(LIBS) $(TARGET)
 tests: $(TESTS)
+	sh ./tests/runtests.sh
 
 valgrind:
 	VALGRIND="valgrind --log-file=/tmp/valgrind-%p.log" $(MAKE)

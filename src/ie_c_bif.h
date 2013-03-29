@@ -15,5 +15,5 @@
 #ifndef _IE_C_BIF_H
 #define _IE_C_BIF_H
 
-FILE *unbifc(const char *filename);
+int unbifc(FILE *in, FILE *out);
 #endif

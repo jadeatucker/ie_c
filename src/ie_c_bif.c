@@ -9,88 +9,61 @@
  * Jade Tucker <jadeatucker@gmail.com> 03/13
  */
 
-#include "ie_c_bif.h"
 #include <zlib.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
-int extractFile(FILE *fIn, FILE *outfile)
+#include "dbg.h"
+#include "ie_c_bif.h"
+
+int readblock(FILE *fIn, FILE *fOut)
 {
   unsigned long cmplen = 0;
   unsigned long uncmplen = 0;
-  void *destBuf, *srcBuf;
-  int status;
+  void *destBuf = NULL, *srcBuf = NULL;
+  int status = 0;
 
   /* read block header */
-  if (fread(&uncmplen, 4, 1, fIn) != 1) return 0;
-  if (fread(&cmplen, 4, 1, fIn) != 1) return 0;
+  check(fread(&uncmplen, 4, 1, fIn) == 1 && \
+        fread(&cmplen, 4, 1, fIn) == 1, \
+        "problem reading compressed bif block header");
 
-  /* allocate buffers for decompression */
   srcBuf = malloc(cmplen);
+  check_mem(srcBuf);
   destBuf = malloc(uncmplen);
+  check_mem(destBuf);
 
-  /* read block to compress */
-  if (!srcBuf || !destBuf || fread(srcBuf, 1, cmplen, fIn) != cmplen)
-  {
-    if (destBuf) free(destBuf);
-    if (srcBuf) free(srcBuf);
-    return 0;
-  }
+  check(fread(srcBuf, cmplen, 1, fIn) == 1, "problem reading compressed bif block");
 
-  /* try the decompression */
-  status = uncompress(destBuf, &uncmplen, srcBuf, cmplen);
+  check(uncompress(destBuf, &uncmplen, srcBuf, cmplen) == Z_OK,\
+        "problem uncompressing compressed bif block");
 
-  /* if success, write the decompressed data to the outfile */
-  if (status == Z_OK)
-    fwrite(destBuf, uncmplen, 1, outfile);
-  else
-    printf("Error decompressing data.\n");
+  check(fwrite(destBuf, uncmplen, 1, fOut) == 1, "problem writing bif block to outfile");
+  status = 1;
 
-  /* clean up our buffers */
-  free(destBuf);
-  free(srcBuf);
-
-  /* if decompression was a success, return 1 */
-  if (status == Z_OK)
-      return 1;
-  else
-      return 0;
+error:
+  if(destBuf) free(destBuf);
+  if(srcBuf) free(srcBuf);
+  return status;
 }
 
-FILE *unbifc(const char *filename)
+int unbifc(FILE *in, FILE *out)
 {
-  char buffer[1024];
   char signature[4], version[4];
   uint32_t uncmplen = 0;
-  FILE *fOut;
-  FILE *fIn;
-
-  /* open input file */
-  fIn = fopen(filename, "rb");
-  if (!fIn) return NULL;
-
-  /* create output file */
-  sprintf(buffer, "%s.uncompressed", filename);
-  fOut = fopen(buffer, "wb");
-  if (!fOut) {
-    fclose(fIn);
-    return NULL;
-  }
 
   /* read header */
-  fread(&signature, 4, 1, fIn);
-  fread(&version, 4, 1, fIn);
-  fread(&uncmplen, 4, 1, fIn);
+  fread(&signature, 4, 1, in);
+  fread(&version, 4, 1, in);
+  fread(&uncmplen, 4, 1, in);
 
-  if(strncmp(signature, "BIFC", 4) == 0 && strncmp(version, "V1.0", 4) == 0) {
-    while(extractFile(fIn, fOut));
-  } else {
-    printf("Error not a compressed bif file or unsupported version.\n");
-    fclose(fIn);
-    return NULL;
-  }
+  check(strncmp(signature, "BIFC", 4) == 0 && strncmp(version, "V1.0", 4) == 0, \
+        "Unsupported BIF file version. Signature and Version should be BIFC V1.0"); 
 
-  fclose(fIn);
-  rewind(fOut);
-  return fOut;
+  while(readblock(in, out));
+
+  return 1;
+error:
+  return 0;
 }

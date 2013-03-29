@@ -14,44 +14,49 @@
 #include <string.h>
 #include <zlib.h>
 
+#include "dbg.h"
 #include "ie_c.h"
 
 void *keread(FILE *file, size_t size, size_t offset)
 {
-  assert(file != NULL);
-
   int tmp;
-  void *result;
+  void *result = NULL;
+
+  check(file, "file cannot be NULL.");
+  check(size >= 0, "size cannot be negative");
+  check(offset >= 0, "offset cannot be negative");
 
   /* find offset */
   tmp = ftell(file);
-  fseek(file, offset, SEEK_SET);
+  check(fseek(file, offset, SEEK_SET) == 0, "Unable to set file offset");
 
   /* allocate space */
   result = malloc(size);
-  assert(result != NULL);
+  check_mem(result);
 
   /* read data */
-  if(fread(result, size, 1, file) != 1) {
-   free(result);
-   result = NULL;
-  }
+  check(fread(result, size, 1, file) == 1, "Unable to read from file");
 
   /* reset file pointer pos */
-  fseek(file, tmp, SEEK_SET);
+  check(fseek(file, tmp, SEEK_SET) == 0, "Unable to set file offset");
 
   return result;
+
+error:
+  if(result) free(result);
+  return NULL;
 }
 
 struct Key *kread(FILE *file)
 {
-  assert(file != NULL);
-  struct Key *key = malloc(sizeof(struct Key));
+  struct Key *key = NULL;
+  check(file, "file cannot be NULL");
+
+  key = malloc(sizeof(struct Key));
+  check_mem(key);
 
   /* read header */
-  fseek(file, 0, SEEK_SET);
-  if(fread(key, IE_KEY_H_LEN, 1, file) != 1) 
-    return NULL;
+  check(fread(key, IE_KEY_H_LEN, 1, file) == 1, "Problem reading key header");
 
   /* load BIF entries */
   if(key->countbif > 0)
@@ -69,9 +74,12 @@ struct Key *kread(FILE *file)
     key->resents = keread(file, key->countres * IE_RESE_LEN, key->offsetres);
 
   return key;
+error:
+  if(key) free(key);
+  return NULL;
 }  
 
-void kdestroy(struct Key *key)
+int kdestroy(struct Key *key)
 {
   if(key != NULL) {
     if(key->bifents != NULL)
@@ -82,50 +90,36 @@ void kdestroy(struct Key *key)
       free(key->strdata);
     free(key);
   }
-}
-
-void klist(struct Key *key)
-{
-  assert(key != NULL);
-  int i = key->countres;
-  char *resname;
-  for(; i > 0; i--) {
-    struct KResEnt kre;
-    kre = key->resents[i];
-    resname = strdup(kre.resname);
-    resname[7] = '\0';
-    printf("%s\n", resname);
-    free(resname);
-  } 
+  return 0;
 }
 
 char *kbifstr(struct Key *key, struct KBifEnt kbe)
 {
-  assert(key != NULL);
+  check(key, "key cannot be NULL");
   if(kbe.lenfname > 0) {
     size_t size = kbe.lenfname;
     size_t stroffset = kbe.offsetfname - KSTRDOFF(key);
     char *str = malloc(size);
-    assert(str != NULL);
+    check_mem(str);
     memcpy(str, &key->strdata[stroffset], size);
     return str;
   }
-  else {
-    return NULL;
-  }
+error:
+  return NULL;
 }
 
 struct KResEnt *kfindres(const char *resname, struct Key *key)
 {
-  assert(key != NULL);
+  check(key, "key cannot be NULL");
   int i = key->countres;
   struct KResEnt *kre;
 
   for(; i > 0; i--) {
     kre = &key->resents[i];
 
-    if(strcmp(resname, kre->resname) == 0)
+    if(strncmp(resname, kre->resname, 8) == 0)
       return kre;
   }
+error:
   return NULL;
 }

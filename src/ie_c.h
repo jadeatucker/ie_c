@@ -50,8 +50,7 @@ struct Key {
 #pragma pack(pop)
 
 void *keread(FILE *file, size_t size, size_t offset);
-void kdestroy(struct Key *key);
-void klist(struct Key *key);
+int kdestroy(struct Key *key);
 char *kbifstr(struct Key *key, struct KBifEnt kbe);
 struct KResEnt *kfindres(const char *resname, struct Key *key);
 struct Key *kread(FILE *file);
