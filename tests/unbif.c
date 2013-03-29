@@ -34,19 +34,20 @@ void extractFile( FILE *fIn, FILE *fOut, unsigned long offset, unsigned long siz
   free( buffer );
 }
 
-int extractFileEntries( FILE *fIn, int filenum )
+int extractFileEntries( FILE *fIn)
 {
-  unsigned char resLoc[4], unknown[2], filename[1024];
+  unsigned char resLoc[4], unknown[2];
+  char filename[1024];
   unsigned long offset = 0;
   unsigned long size = 0;
   unsigned long type = 0;
   FILE *fOut;
 
-  if( fread( &resLoc, 4, 1, fIn ) != 1 ) return 0;
-  if( fread( &offset, 4, 1, fIn ) != 1 ) return 0;
-  if( fread( &size, 4, 1, fIn ) != 1 ) return 0;
-  if( fread( &type, 2, 1, fIn ) != 1 ) return 0;
-  if( fread( &unknown, 2, 1, fIn ) != 1 ) return 0;
+  if( fread( &resLoc, 4, 1, fIn ) != 1 ) return 1;
+  if( fread( &offset, 4, 1, fIn ) != 1 ) return 1;
+  if( fread( &size, 4, 1, fIn ) != 1 ) return 1;
+  if( fread( &type, 2, 1, fIn ) != 1 ) return 1;
+  if( fread( &unknown, 2, 1, fIn ) != 1 ) return 1;
 
   /* case BMP */
   switch( type )
@@ -62,7 +63,7 @@ int extractFileEntries( FILE *fIn, int filenum )
       break;
   }
   fOut = fopen( filename, "wb");
-  if( !fOut ) return;
+  if( !fOut ) return 1;
 
   extractFile( fIn, fOut, offset, size);
   fclose( fOut );
@@ -91,8 +92,8 @@ void unBif( const char *filename )
   fread( &offset, 4, 1, fIn );
 
   int i;
-  for( i = 1; i <= numfiles; i++ )
-    extractFileEntries( fIn, i );
+  for( i = 1; i <= (int) numfiles; i++ )
+    extractFileEntries( fIn );
 
   fclose( fIn );
 }

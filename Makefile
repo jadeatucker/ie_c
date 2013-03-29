@@ -1,24 +1,56 @@
-CC = gcc
-CFLAGS = -lz -Wall -g -ansi
+CFLAGS=-g -O2 -Wall -Wextra -Isrc -DNDEBUG $(OPTFLAGS)
+LIBS=-ldl -lz $(OPTLIBS)
+PREFIX?=/usr/local
 
-ODIR = obj
-SDIR = src
-INC = -Iinc
-BUILD = build
+SOURCES=$(wildcard src/**/*.c src/*.c)
+OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 
-OBJS = $(addprefix $(ODIR)/, ie_c.o ie_c_bif.o)
+TEST_SRC=$(wildcard tests/*.c)
+TESTS=$(patsubst %.c,%,$(TEST_SRC))
 
-$(ODIR)/%.o: $(SDIR)/%.c
-	$(CC) -c $(INC) -o $@ $< $(CFLAGS) 
+TARGET=build/libiec.a
+SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
 
-keytest: $(OBJS)
-	$(CC) keytest.c -o $(BUILD)/$@ $(OBJS) $(INC) $(CFLAGS)
+# The Target Build
+all: $(TARGET) $(SO_TARGET) tests
 
-unbifc: $(OBJS)
-	$(CC) unbifc.c -o $(BUILD)/$@ $(OBJS) $(INC) $(CFLAGS)
+dev: CFLAGS=-g -Wall -Wextra -Isrc $(OPTFLAGS)
+dev: all
 
-setup:
-	mkdir -p build obj
+$(TARGET): CFLAGS += -fPIC
+$(TARGET): build $(OBJECTS)
+	ar rcs $@ $(OBJECTS)
+	ranlib $@
 
+$(SO_TARGET): $(TARGET) $(OBJECTS)
+	$(CC) -shared $(LIBS) -o $@ $(OBJECTS)
+
+build:
+	@mkdir -p build
+	@mkdir -p bin
+
+# The Unit Tests
+.PHONY: tests
+tests: CFLAGS += $(LIBS) $(TARGET)
+tests: $(TESTS)
+
+valgrind:
+	VALGRIND="valgrind --log-file=/tmp/valgrind-%p.log" $(MAKE)
+
+# The Cleaner
 clean:
-	rm -rf build/ obj/
+	rm -rf build $(OBJECTS) $(TESTS)
+	rm -f tests/tests.log
+	find . -name "*.gc*" -exec rm {} \;
+	rm -rf `find . -name "*.dSYM" -print`
+
+# The Install
+install: all
+	install -d $(DESTDIR)/$(PREFIX)/lib/
+	install $(TARGET) $(DESTDIR)/$(PREFIX)/lib/
+
+# The Checker
+BADFUNCS='[^_.>a-zA-Z0-9](str(n?cpy|n?cat|xfrm|n?dup|str|pbrk|tok|_)|stpn?cpy|a?sn?printf|byte_)'
+check:
+	@echo Files with potentially dangerous functions.
+	@egrep $(BADFUNCS) $(SOURCES) || true
