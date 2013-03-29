@@ -24,11 +24,28 @@ error:
   return 0;
 }
 
+char *test_unbif()
+{
+  FILE *fIn;
+  fIn = fopen(BIF, "rb");
+  check(fIn, "Could not open file for reading %s", BIF);
+
+  struct Bif *bif;
+  bif = unbif(fIn);
+  mu_assert(bif != NULL, "failed to read bif file");
+
+  free(bif);
+  return NULL;
+error:
+  return 0;
+}
+
 char *all_tests()
 {
   mu_suite_start();
 
   mu_run_test(test_unbifc);
+  mu_run_test(test_unbif);
 
   return NULL;
 }
