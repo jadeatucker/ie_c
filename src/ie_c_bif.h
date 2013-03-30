@@ -27,6 +27,16 @@ struct BFileEnt {
   void *data;
 };
 
+struct BTileEnt {
+  unsigned char resLoc[4], uk[2];
+  uint32_t offset;
+  uint32_t numtiles;
+  uint32_t tilesize;
+  uint16_t type;
+
+  void *data;
+};
+
 struct Bif {
   char signature[4], version[4];
   uint32_t numfiles;
@@ -34,9 +44,11 @@ struct Bif {
   uint32_t offset;
 
   struct BFileEnt *bfents;
+  struct BTileEnt *btents;
 };
 #pragma pack(pop)
 
 int unbifc(FILE *in, FILE *out);
 struct Bif *unbif(FILE *in);
+int bdestroy(struct Bif *bif);
 #endif

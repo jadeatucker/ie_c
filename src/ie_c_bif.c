@@ -59,7 +59,10 @@ int unbifc(FILE *in, FILE *out)
   check(strncmp(signature, "BIFC", 4) == 0 && strncmp(version, "V1.0", 4) == 0, \
         "Unsupported BIF file version. Signature and Version should be BIFC V1.0"); 
 
-  while(readblock(in, out) == 0);
+  while(ftell(out) != (long) uncmplen) {
+    int result = ; 
+    check(readblock(in, out) == 0, "Problem reading compressed block data");
+  }
 
   return 0;
 error:
@@ -98,19 +101,15 @@ error:
   return NULL;
 }
 
-struct BFileEnt *bferead(FILE *fIn, int count, size_t offset)
+struct BFileEnt *bferead(FILE *fIn, int count)
 {
   struct BFileEnt *bfe = NULL;
 
   check(fIn != NULL, "File cannot be NULL");
   check(count >= 0, "Count cannot be negative");
-  check(offset >= 0, "Offset cannot be negative");
 
   bfe = malloc(count * sizeof(struct BFileEnt));
   check_mem(bfe);
-
-  check(fseek(fIn, offset, SEEK_SET) == 0, \
-      "Problem seeking to file entry offset.");
 
   int i;
   for(i = 0; i < count; i++) {
@@ -133,6 +132,38 @@ error:
   return NULL;
 }
 
+struct BTileEnt *bteread(FILE *fIn, int count)
+{
+  struct BTileEnt *bte = NULL;
+
+  check(fIn != NULL, "File cannot be NULL");
+  check(count >= 0, "Count cannot be negative");
+
+  bte = malloc(count * sizeof(struct BTileEnt));
+  check_mem(bte);
+
+  int i;
+  for(i = 0; i < count; i++) {
+    struct BTileEnt *t = &bte[i];
+    check(fread(&t->resLoc, 4, 1, fIn) == 1 && \
+          fread(&t->offset, 4, 1, fIn) == 1 && \
+          fread(&t->numtiles, 4, 1, fIn) == 1 && \
+          fread(&t->tilesize, 4, 1, fIn) == 1 && \
+          fread(&t->type, 2, 1, fIn) == 1 && \
+          fread(&t->uk, 2, 1, fIn) == 1,\
+          "Problem reading file entry");
+
+    size_t data_size = t->numtiles * (size_t) t->tilesize;
+    t->data = beread(fIn, data_size, (size_t) t->offset);
+    check(t->data != NULL, "Problem reading tileset data");
+  }
+
+  return bte;
+error:
+  if(bte) free(bte);
+  return NULL;
+}
+
 struct Bif *unbif(FILE *in)
 {
   struct Bif *bif = NULL;
@@ -142,8 +173,14 @@ struct Bif *unbif(FILE *in)
   check(fread(bif, BIF_H_LEN, 1, in) == 1,\
       "Problem reading bif header");
 
+  check(fseek(in, bif->offset, SEEK_SET) == 0, \
+      "Problem seeking to file entry offset");
+
   if(bif->numfiles > 0)
-    bif->bfents = bferead(in, (int) bif->numfiles, (size_t) bif->offset);
+    bif->bfents = bferead(in, (int) bif->numfiles);
+
+  if(bif->numtilesets > 0)
+    bif->btents = bteread(in, (int) bif->numtilesets);
 
   return bif;
 
@@ -151,3 +188,24 @@ error:
   if(bif) free(bif);
   return NULL;
 }
+
+int bdestroy(struct Bif *bif)
+{
+  if(bif != NULL) {
+    if(bif->bfents != NULL) {
+      uint32_t i;
+      for(i = 0; i < bif->numfiles; i++)
+        free(bif->bfents[i].data);
+      free(bif->bfents);
+    }
+    if(bif->btents != NULL) {
+      uint32_t i;
+      for(i = 0; i < bif->numtilesets; i++)
+        free(bif->btents[i].data);
+      free(bif->btents);
+    }
+    free(bif);
+  }
+  return 0;
+}
+
