@@ -7,6 +7,8 @@
 #define BIFC "data/AREA0300.bif"
 #define BIF "data/AREA0300.bif.uncompressed"
 
+struct Bif *bif;
+
 char *test_unbifc()
 {
   FILE *fIn, *fOut;
@@ -30,15 +32,20 @@ char *test_unbif()
   fIn = fopen(BIF, "rb");
   check(fIn, "Could not open file for reading %s", BIF);
 
-  struct Bif *bif;
   bif = unbif(fIn);
   mu_assert(bif != NULL, "failed to read bif file");
 
-  free(bif);
   return NULL;
 error:
   return 0;
 }
+
+char *test_bdestroy() {
+  mu_assert(bdestroy(bif) == 0, "failed to destroy bif structure");
+
+  return NULL;
+}
+
 
 char *all_tests()
 {
@@ -46,6 +53,7 @@ char *all_tests()
 
   mu_run_test(test_unbifc);
   mu_run_test(test_unbif);
+  mu_run_test(test_bdestroy);
 
   return NULL;
 }
