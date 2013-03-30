@@ -22,12 +22,11 @@ int readblock(FILE *fIn, FILE *fOut)
   unsigned long cmplen = 0;
   unsigned long uncmplen = 0;
   void *destBuf = NULL, *srcBuf = NULL;
-  int status = 0;
+  int status = 1;
 
   /* read block header */
-  check(fread(&uncmplen, 4, 1, fIn) == 1 && \
-        fread(&cmplen, 4, 1, fIn) == 1, \
-        "problem reading compressed bif block header");
+  check(fread(&uncmplen, 4, 1, fIn) == 1, "problem reading compressed bif block header uncmplen");
+  check(fread(&cmplen, 4, 1, fIn) == 1, "problem reading compressed bif block header cmplen");
 
   srcBuf = malloc(cmplen);
   check_mem(srcBuf);
@@ -36,11 +35,10 @@ int readblock(FILE *fIn, FILE *fOut)
 
   check(fread(srcBuf, cmplen, 1, fIn) == 1, "problem reading compressed bif block");
 
-  check(uncompress(destBuf, &uncmplen, srcBuf, cmplen) == Z_OK,\
-        "problem uncompressing compressed bif block");
+  check(uncompress(destBuf, &uncmplen, srcBuf, cmplen) == Z_OK, "problem uncompressing compressed bif block");
 
   check(fwrite(destBuf, uncmplen, 1, fOut) == 1, "problem writing bif block to outfile");
-  status = 1;
+  status = 0;
 
 error:
   if(destBuf) free(destBuf);
@@ -61,11 +59,11 @@ int unbifc(FILE *in, FILE *out)
   check(strncmp(signature, "BIFC", 4) == 0 && strncmp(version, "V1.0", 4) == 0, \
         "Unsupported BIF file version. Signature and Version should be BIFC V1.0"); 
 
-  while(readblock(in, out));
+  while(readblock(in, out) == 0);
 
-  return 1;
-error:
   return 0;
+error:
+  return 1;
 }
 
 // TODO: This is exactly the same as keread,

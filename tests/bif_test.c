@@ -16,7 +16,7 @@ char *test_unbifc()
   fOut = fopen(BIF, "wb");
   check(fOut, "Could not open file for writing %s", BIF);
 
-  mu_assert(unbifc(fIn, fOut), "failed to uncompress bif file");
+  mu_assert(unbifc(fIn, fOut) == 0, "failed to uncompress bif file");
 
   return NULL;
 
