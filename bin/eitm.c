@@ -52,8 +52,6 @@ void exportitm( const char *filename )
 {
   struct itm item;
   FILE *fIn;
-  FILE *fOut;
-  char outfile[1024];
 
   fIn = fopen( filename, "rb" );
   if( !fIn ) return;

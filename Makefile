@@ -15,7 +15,7 @@ PROGRAMS_SRC=$(wildcard bin/*.c)
 PROGRAMS=$(patsubst %.c,%, $(PROGRAMS_SRC))
 
 # The Target Build
-all: $(TARGET) $(SO_TARGET) tests $(PROGRAMS)
+all: $(TARGET) $(SO_TARGET) $(PROGRAMS) tests
 
 dev: CFLAGS=-g -Wall -Wextra -Isrc $(OPTFLAGS)
 dev: all

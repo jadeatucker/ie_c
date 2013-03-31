@@ -69,6 +69,7 @@ void tlklookup( const char *filename )
 
 int main( int c, char **v )
 {
-  tlklookup( v[1] );
+  if(c > 1)
+    tlklookup( v[1] );
   return 0;
 }

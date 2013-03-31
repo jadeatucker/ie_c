@@ -4,8 +4,8 @@
 #include "dbg.h"
 #include "ie_c_bif.h"
 
-#define BIFC "data/AREA0300.bif"
-#define BIF "data/AREA0300.bif.uncompressed"
+#define BIFC "data/AREA000B.bif"
+#define BIF "data/AREA000B.bif.uncompressed"
 
 struct Bif *bif;
 
