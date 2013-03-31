@@ -5,7 +5,10 @@
 #include "ie_c.h"
 
 #define FILE_NAME "data/CHITIN.key"
+#define RESNAME "AMUL05"
+
 struct Key *key = NULL;
+struct KResEnt *kre = NULL;
 
 char *test_kread()
 {
@@ -35,8 +38,18 @@ char *test_kbifstr()
 
 char *test_kfindres()
 {
-  const char *resname = "AMUL05";
-  mu_assert(kfindres(resname, key), "failed to find resource named AMUL05");
+  kre = kfindres(RESNAME, key);
+  mu_assert(kre != NULL, "failed to find resource");
+
+  return NULL;
+}
+
+char *test_kfindbif()
+{
+  struct KBifEnt *kbe = NULL;
+
+  kbe = kfindbif(key, kre);
+  mu_assert(kbe != NULL, "failed to lookup bif entry frome resource entry");
 
   return NULL;
 }
@@ -55,6 +68,7 @@ char *all_tests()
   mu_run_test(test_kread);
   mu_run_test(test_kbifstr);
   mu_run_test(test_kfindres);
+  mu_run_test(test_kfindbif);
   mu_run_test(test_kdestroy);
 
   return NULL;

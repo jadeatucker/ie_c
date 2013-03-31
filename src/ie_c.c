@@ -123,3 +123,9 @@ struct KResEnt *kfindres(const char *resname, struct Key *key)
 error:
   return NULL;
 }
+
+struct KBifEnt *kfindbif(struct Key *key, struct KResEnt *kre)
+{
+  unsigned int bifindex = (kre->reslocator & 0xFFF00000) >> 20;
+  return &key->bifents[bifindex];
+}
